@@ -3,3 +3,4 @@ snapshot/
 visulization/
 addings/
 .idea/
+*.pyc
