@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from amm import AMM
-from drnet import DeMakeup, ReMakeup
+from manet import DeMakeup, ReMakeup
 from mdnet import MakeupDistillation 
 from PIL import Image
 
@@ -33,9 +33,9 @@ if __name__ == '__main__':
     points_y = torch.randn((1, 136, 64, 64))
 
     mask_x = np.ones((1, 1, 64, 64))
-    mask_y = np.ones((1, 1, 64, 64))
+    mask_y = np.zeros((1, 1, 64, 64))
 
     G = Generator_PS()
     x_hat = G(x, y, points_x, points_y, mask_x, mask_y)
-    print(x_hat)
+    # print(x_hat)
     print(x_hat.shape)

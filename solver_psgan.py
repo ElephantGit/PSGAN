@@ -165,13 +165,17 @@ class Solver_PSGAN(object):
         self.G = net.Generator_PS(self.g_conv_dim, self.g_repeat_num)
         for i in self.cls:
             setattr(self, "D_" + i, net.Discriminator(self.img_size, self.d_conv_dim, self.d_repeat_num, self.norm))
-
+        
+        # Define losses
         self.criterionL1 = torch.nn.L1Loss()
         self.criterionL2 = torch.nn.MSELoss()
         self.criterionGAN = GANLoss(use_lsgan=True, tensor =torch.cuda.FloatTensor)
+        
+        # VGG
         self.vgg = net.VGG()
         self.vgg.load_state_dict(torch.load('addings/vgg_conv.pth'))
         # self.vgg = models.vgg16(pretrained=True).features[:28]
+        
         # Optimizers
         self.g_optimizer = torch.optim.Adam(self.G.parameters(), self.g_lr, [self.beta1, self.beta2])
         for i in self.cls:
@@ -188,7 +192,8 @@ class Solver_PSGAN(object):
         self.print_network(self.G, 'G')
         for i in self.cls:
             self.print_network(getattr(self, "D_" + i), "D_" + i)
-
+        
+        # move model to CUDA
         if torch.cuda.is_available():
             self.G.cuda()
             self.vgg.cuda()
@@ -250,7 +255,7 @@ class Solver_PSGAN(object):
         d_lr = self.d_lr
         if self.checkpoint:
             start = int(self.checkpoint.split('_')[0])
-            self.vis_test()
+            # self.vis_test()
         else:
             start = 0
         # Start training
@@ -262,20 +267,20 @@ class Solver_PSGAN(object):
                 # 7: upper-lip 8: teeth 9: under-lip 10:hair 11: left-ear 12: right-ear 13: neck
                 if self.checkpoint or self.direct:
                     if self.lips==True:
-                        mask_A_lip = (mask_A==7).float() + (mask_A==9).float()
-                        mask_B_lip = (mask_B==7).float() + (mask_B==9).float()
+                        mask_A_lip = (mask_A==12).float() + (mask_A==13).float()
+                        mask_B_lip = (mask_B==12).float() + (mask_B==13).float()
                         mask_A_lip, mask_B_lip, index_A_lip, index_B_lip = self.mask_preprocess(mask_A_lip, mask_B_lip)
                     if self.skin==True:
-                        mask_A_skin = (mask_A==1).float() + (mask_A==6).float() + (mask_A==13).float()
-                        mask_B_skin = (mask_B==1).float() + (mask_B==6).float() + (mask_B==13).float()
+                        mask_A_skin = (mask_A==1).float() + (mask_A==10).float() + (mask_A==14).float()
+                        mask_B_skin = (mask_B==1).float() + (mask_B==10).float() + (mask_B==14).float()
                         mask_A_skin, mask_B_skin, index_A_skin, index_B_skin = self.mask_preprocess(mask_A_skin, mask_B_skin)
                     if self.eye==True:
-                        mask_A_eye_left = (mask_A==4).float()
-                        mask_A_eye_right = (mask_A==5).float()
-                        mask_B_eye_left = (mask_B==4).float()
-                        mask_B_eye_right = (mask_B==5).float()
-                        mask_A_face = (mask_A==1).float() + (mask_A==6).float()
-                        mask_B_face = (mask_B==1).float() + (mask_B==6).float()
+                        mask_A_eye_left = (mask_A==5).float()
+                        mask_A_eye_right = (mask_A==4).float()
+                        mask_B_eye_left = (mask_B==5).float()
+                        mask_B_eye_right = (mask_B==4).float()
+                        mask_A_face = (mask_A==1).float() + (mask_A==10).float()
+                        mask_B_face = (mask_B==1).float() + (mask_B==10).float()
                         # avoid the situation that images with eye closed
                         if not ((mask_A_eye_left>0).any() and (mask_B_eye_left>0).any() and \
                             (mask_A_eye_right > 0).any() and (mask_B_eye_right > 0).any()):
@@ -291,6 +296,8 @@ class Solver_PSGAN(object):
                 ref_B = self.to_var(img_B, requires_grad=False)
                 mask_org = self.to_var(F.interpolate(mask_A, scale_factor=1/4), requires_grad=False)
                 mask_ref = self.to_var(F.interpolate(mask_B, scale_factor=1/4), requires_grad=False)
+
+                # landmarks
                 landmarks_org = np.ones((1, 136, 256, 256))
                 landmarks_ref = np.ones((1, 136, 256, 256))
                 for i in range(64):

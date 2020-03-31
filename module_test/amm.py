@@ -14,12 +14,12 @@ class AMM(nn.Module):
         self.visual_weight = visual_weight
 
     def forward(self, feat_src, feat_ref, landmarks_src, landmarks_ref, mask_src, mask_ref):
-        print(feat_ref.shape)
-        print(feat_src.shape)
-        print(landmarks_ref.shape)
-        print(landmarks_src.shape)
-        print(mask_ref.shape)
-        print(mask_src.shape)
+        print('feat_ref shape: ', feat_ref.shape)
+        print('feat_src shape: ', feat_src.shape)
+        print('landmark_ref shape:', landmarks_ref.shape)
+        print('landmark_src shape:', landmarks_src.shape)
+        print('mask_ref shape:', mask_ref.shape)
+        print('mask_ref shape:', mask_src.shape)
         self.feat_src = feat_src
         self.feat_ref = feat_ref
         self.points_src = landmarks_src
@@ -32,12 +32,11 @@ class AMM(nn.Module):
         gama = self.conv2(self.feat_ref)
         print('gama shape:', gama.shape)
 
-        b, c, h, w = self.feat_src.size()
-        print(b, c, h, w)
-
         # feat_src: (h,w,c) (h,w,136) --> (h*w, c+136)
         # feat_ref: (h,w,c) (h,w,136) --> (c+136, h*w)
+        b, c, h, w = self.feat_src.size()
         src = torch.cat(tensors=(self.visual_weight * self.feat_src, self.points_src), dim=1)
+        print(src.shape)
         feat_points_src = torch.reshape(src, (h * w, c + 136))
         print('shape of feat_points_src: ',feat_points_src.shape)
         ref = torch.cat(tensors=(self.visual_weight * self.feat_ref, self.points_ref), dim=1)
@@ -46,10 +45,19 @@ class AMM(nn.Module):
         
         self.mask_src = np.reshape(self.mask_src, (h * w))
         self.mask_ref = np.reshape(self.mask_ref, (h * w))
-        M = []
-        for i, m in enumerate(self.mask_src):
-            M.append(self.mask_ref[i] == m)
-        M = torch.Tensor(np.array(M).astype(np.float32))
+        print('reshaped mask_ref shape:', self.mask_ref.shape)
+        print('reshaped mask_ref shape:', self.mask_src.shape)
+
+        # M is the mask matrix in indicator function
+        # M = []
+        # for i, m in enumerate(self.mask_src):
+        #     M.append(self.mask_ref[i] == m)
+        # M = np.array(M, dtype=np.float32)
+        # print(np.min(M))
+        # print(np.max(M))
+        # M = torch.Tensor(M)
+        M = torch.BoolTensor(self.mask_src == self.mask_ref).float()
+        print('M:', M)
         print('shape of M:', M.shape)
 
         # calculate Attention Map

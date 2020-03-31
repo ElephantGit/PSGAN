@@ -96,10 +96,11 @@ class AMM(nn.Module):
 
         self.mask_src = np.reshape(self.mask_src.cpu().numpy(), (h * w))
         self.mask_ref = np.reshape(self.mask_ref.cpu().numpy(), (h * w))
-        M = []
-        for i, m in enumerate(self.mask_src):
-            M.append(self.mask_ref[i] == m)
-        M = torch.Tensor(np.array(M).astype(np.float32)).cuda()
+        # M = []
+        # for i, m in enumerate(self.mask_src):
+        #     M.append(self.mask_ref[i] == m)
+        # M = torch.Tensor(np.array(M).astype(np.float32)).cuda()
+        M = torch.BoolTensor(self.mask_src == self.mask_ref).float()
 
         # calculate Attention Map
         # A = (h*w, h*w) = (h*w, c+136) * (c+136, h*w)
